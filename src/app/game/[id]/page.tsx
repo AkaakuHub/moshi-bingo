@@ -268,18 +268,7 @@ export default function GamePage() {
           }
         }
 
-        // 3秒後に必ず終了
-        const animationTimeout = setTimeout(() => {
-          console.log('INITIAL ANIMATION TIMEOUT - forcing end');
-          setShowAnimation(false);
-          setIsDrawing(false);
-          setHasNumberOnCard(false);
-        }, 3000);
-
-        // クリーンアップ
-        return () => {
-          clearTimeout(animationTimeout);
-        };
+        // DrawAnimationコンポーネント内で3秒後に自動終了される
       } else {
         // ゲームがまだ始まっていない場合は番号を設定するだけ
         console.log('Game not started yet - just setting last drawn number');
@@ -375,18 +364,7 @@ export default function GamePage() {
         }
       }
 
-      // 3秒後に必ず終了
-      const animationTimeout = setTimeout(() => {
-        console.log('ANIMATION TIMEOUT - forcing end');
-        setShowAnimation(false);
-        setIsDrawing(false);
-        setHasNumberOnCard(false);
-      }, 3000);
-
-      // クリーンアップ
-      return () => {
-        clearTimeout(animationTimeout);
-      };
+      // DrawAnimationコンポーネント内で3秒後に自動終了される
     }
   }, [currentGame?.current_number, currentUser?.role, bingoCard?.numbers, lastDrawnNumber]);
 
@@ -451,6 +429,12 @@ export default function GamePage() {
       setIsDrawing(false);
       setShowAnimation(false);
     }
+  };
+
+  const handleAnimationComplete = () => {
+    setShowAnimation(false);
+    setIsDrawing(false);
+    setHasNumberOnCard(false);
   };
 
   const handleReachAnimationComplete = () => {
@@ -643,6 +627,7 @@ export default function GamePage() {
         <DrawAnimation
           isVisible={showAnimation}
           drawnNumber={currentUser.role === 'host' ? hostDisplayNumber : lastDrawnNumber}
+          onComplete={handleAnimationComplete}
           hasNumberOnCard={hasNumberOnCard}
           isParticipant={currentUser.role === 'participant'}
         />

@@ -5,11 +5,12 @@ import { useEffect, useState } from 'react';
 interface DrawAnimationProps {
   isVisible: boolean;
   drawnNumber: number | null;
+  onComplete: () => void;
   hasNumberOnCard?: boolean;
   isParticipant?: boolean;
 }
 
-export default function DrawAnimation({ isVisible, drawnNumber, hasNumberOnCard = false, isParticipant = false }: DrawAnimationProps) {
+export default function DrawAnimation({ isVisible, drawnNumber, onComplete, hasNumberOnCard = false, isParticipant = false }: DrawAnimationProps) {
   const [animationState, setAnimationState] = useState<'hidden' | 'spinning' | 'reveal'>('hidden');
 
   // 発表演出中は手動で閉じることができない（固定時間で自動終了のみ）
@@ -18,17 +19,29 @@ export default function DrawAnimation({ isVisible, drawnNumber, hasNumberOnCard 
     if (isVisible) {
       console.log('DrawAnimation: Starting animation');
       setAnimationState('spinning');
-      const timer = setTimeout(() => {
+      
+      // 2秒後にrevealフェーズに移行
+      const revealTimer = setTimeout(() => {
         console.log('DrawAnimation: Switching to reveal');
         setAnimationState('reveal');
-        // onCompleteは呼ばない（親コンポーネントが固定時間で制御）
       }, 2000);
-      return () => clearTimeout(timer);
+      
+      // 3秒後に自動でアニメーション終了
+      const completeTimer = setTimeout(() => {
+        console.log('DrawAnimation: Animation complete, calling onComplete');
+        setAnimationState('hidden');
+        onComplete();
+      }, 3000);
+      
+      return () => {
+        clearTimeout(revealTimer);
+        clearTimeout(completeTimer);
+      };
     } else {
       console.log('DrawAnimation: Hiding animation');
       setAnimationState('hidden');
     }
-  }, [isVisible]);
+  }, [isVisible, onComplete]);
 
   if (!isVisible || drawnNumber === null) {
     console.log('DrawAnimation: Not visible or no number', { isVisible, drawnNumber });

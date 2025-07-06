@@ -205,11 +205,7 @@ export default function Home() {
       // 即座にDBを更新（参加者にすぐ伝わる）
       await drawNumber(newNumber);
       
-      // アニメーション終了を待つ
-      setTimeout(() => {
-        setShowAnimation(false);
-        setIsDrawing(false);
-      }, 3500);
+      // DrawAnimationコンポーネント内で3秒後に自動終了される
     } catch {
       console.error('No more numbers to draw');
       setIsDrawing(false);
@@ -415,6 +411,10 @@ export default function Home() {
         <DrawAnimation
           isVisible={showAnimation}
           drawnNumber={currentUser?.role === 'host' ? hostDisplayNumber : lastDrawnNumber}
+          onComplete={() => {
+            setShowAnimation(false);
+            setIsDrawing(false);
+          }}
           hasNumberOnCard={hasNumberOnCard}
           isParticipant={currentUser?.role === 'participant'}
         />
