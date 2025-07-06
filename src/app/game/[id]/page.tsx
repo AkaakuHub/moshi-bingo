@@ -34,15 +34,12 @@ export default function GamePage() {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [hasNumberOnCard, setHasNumberOnCard] = useState(false);
   const [hostDisplayNumber, setHostDisplayNumber] = useState<number | null>(null);
-  const [animationNumber, setAnimationNumber] = useState<number | null>(null);
 
   const { 
     currentGame, 
     currentUser, 
     bingoCard, 
-    isConnected,
     participants,
-    joinGame, 
     createBingoCard, 
     updateBingoCard, 
     drawNumber,
@@ -91,7 +88,7 @@ export default function GamePage() {
       
       return () => clearTimeout(timer);
     }
-  }, [gameId, userId, gameLoaded]);
+  }, [gameId, userId, gameLoaded, loadGame, loadGameWithUser, router]);
 
   // 初期値設定とアニメーション終了後の同期
   useEffect(() => {
@@ -231,7 +228,7 @@ export default function GamePage() {
         setLastDrawnNumber(currentGame.current_number);
       }
     }
-  }, [currentGame?.current_number, currentUser?.role, bingoCard]);
+  }, [currentGame?.current_number, currentUser?.role, bingoCard, lastDrawnNumber, showAnimation, currentGame]);
 
   const handleCellClick = (row: number, col: number) => {
     if (!bingoCard || !currentGame) return;

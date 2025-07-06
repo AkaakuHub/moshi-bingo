@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getOrCreateSessionId, getSessionId } from '@/utils/sessionUtils';
+import { getOrCreateSessionId } from '@/utils/sessionUtils';
 
 export interface Game {
   id: string;
@@ -37,6 +37,23 @@ export function useSupabase() {
   const [isConnected, setIsConnected] = useState(false);
   const [cardCreated, setCardCreated] = useState(false);
   const [participants, setParticipants] = useState<User[]>([]);
+
+  const fetchParticipants = useCallback(async () => {
+    if (!currentGame) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('game_id', currentGame.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setParticipants(data || []);
+    } catch (error) {
+      console.error('Error fetching participants:', error);
+    }
+  }, [currentGame]);
 
   useEffect(() => {
     if (!currentGame) return;
@@ -105,7 +122,7 @@ export function useSupabase() {
       supabase.removeChannel(cardChannel);
       supabase.removeChannel(usersChannel);
     };
-  }, [currentGame?.id]);
+  }, [currentGame?.id, bingoCard?.id, fetchParticipants]);
 
   const createGame = async (gameName: string, hostName: string) => {
     try {
@@ -299,28 +316,11 @@ export function useSupabase() {
     }
   };
 
-  const fetchParticipants = async () => {
-    if (!currentGame) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('game_id', currentGame.id)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      setParticipants(data || []);
-    } catch (error) {
-      console.error('Error fetching participants:', error);
-    }
-  };
-
   useEffect(() => {
     if (currentGame) {
       fetchParticipants();
     }
-  }, [currentGame]);
+  }, [currentGame, fetchParticipants]);
 
   const loadGameWithUser = async (gameId: string, userId?: string) => {
     try {

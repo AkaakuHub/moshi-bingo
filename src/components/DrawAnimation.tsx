@@ -10,7 +10,7 @@ interface DrawAnimationProps {
   isParticipant?: boolean;
 }
 
-export default function DrawAnimation({ isVisible, drawnNumber, onComplete, hasNumberOnCard = false, isParticipant = false }: DrawAnimationProps) {
+export default function DrawAnimation({ isVisible, drawnNumber, hasNumberOnCard = false, isParticipant = false }: DrawAnimationProps) {
   const [animationState, setAnimationState] = useState<'hidden' | 'spinning' | 'reveal'>('hidden');
 
   useEffect(() => {

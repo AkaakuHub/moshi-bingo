@@ -31,7 +31,6 @@ export default function Home() {
     currentGame, 
     currentUser, 
     bingoCard, 
-    isConnected,
     participants,
     createGame, 
     joinGame, 
@@ -83,7 +82,7 @@ export default function Home() {
         createBingoCard(card);
       }
     }
-  }, [currentGame, currentUser, bingoCard, gameStep, cardInitialized]);
+  }, [currentGame, currentUser, bingoCard, gameStep, cardInitialized, createBingoCard]);
 
   // 参加者側で抽選アニメーション表示
   useEffect(() => {
@@ -137,7 +136,7 @@ export default function Home() {
         setLastDrawnNumber(currentGame.current_number);
       }
     }
-  }, [currentGame?.current_number, currentUser?.role, bingoCard]);
+  }, [currentGame?.current_number, currentUser?.role, bingoCard, lastDrawnNumber, showAnimation, currentGame]);
 
   const handleStartGame = async () => {
     if (!userName.trim()) return;
@@ -164,7 +163,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error starting game:', error);
-      alert('エラーが発生しました: ' + (error as any).message);
+      alert('エラーが発生しました: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 

@@ -23,7 +23,7 @@ export default function JoinPage() {
       }
     } catch (error) {
       console.error('Error joining game:', error);
-      alert('エラーが発生しました: ' + (error as any).message);
+      alert('エラーが発生しました: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsLoading(false);
     }

@@ -98,21 +98,21 @@ export type Database = {
           created_at: string
           game_id: string
           event_type: string
-          data: any
+          data: Record<string, unknown>
         }
         Insert: {
           id?: string
           created_at?: string
           game_id: string
           event_type: string
-          data?: any
+          data?: Record<string, unknown>
         }
         Update: {
           id?: string
           created_at?: string
           game_id?: string
           event_type?: string
-          data?: any
+          data?: Record<string, unknown>
         }
       }
     }
