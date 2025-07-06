@@ -217,10 +217,6 @@ export default function Home() {
     }
   };
 
-  const handleAnimationComplete = () => {
-    setShowAnimation(false);
-    setIsDrawing(false);
-  };
 
   if (gameStep === 'select') {
     return (
@@ -419,7 +415,6 @@ export default function Home() {
         <DrawAnimation
           isVisible={showAnimation}
           drawnNumber={currentUser?.role === 'host' ? hostDisplayNumber : lastDrawnNumber}
-          onComplete={handleAnimationComplete}
           hasNumberOnCard={hasNumberOnCard}
           isParticipant={currentUser?.role === 'participant'}
         />

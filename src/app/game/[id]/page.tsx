@@ -453,11 +453,6 @@ export default function GamePage() {
     }
   };
 
-  const handleAnimationComplete = () => {
-    setShowAnimation(false);
-    setIsDrawing(false);
-  };
-
   const handleReachAnimationComplete = () => {
     setShowReachAnimation(false);
   };
@@ -648,7 +643,6 @@ export default function GamePage() {
         <DrawAnimation
           isVisible={showAnimation}
           drawnNumber={currentUser.role === 'host' ? hostDisplayNumber : lastDrawnNumber}
-          onComplete={handleAnimationComplete}
           hasNumberOnCard={hasNumberOnCard}
           isParticipant={currentUser.role === 'participant'}
         />

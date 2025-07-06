@@ -5,12 +5,11 @@ import { useEffect, useState } from 'react';
 interface DrawAnimationProps {
   isVisible: boolean;
   drawnNumber: number | null;
-  onComplete: () => void;
   hasNumberOnCard?: boolean;
   isParticipant?: boolean;
 }
 
-export default function DrawAnimation({ isVisible, drawnNumber, onComplete, hasNumberOnCard = false, isParticipant = false }: DrawAnimationProps) {
+export default function DrawAnimation({ isVisible, drawnNumber, hasNumberOnCard = false, isParticipant = false }: DrawAnimationProps) {
   const [animationState, setAnimationState] = useState<'hidden' | 'spinning' | 'reveal'>('hidden');
 
   // 発表演出中は手動で閉じることができない（固定時間で自動終了のみ）
