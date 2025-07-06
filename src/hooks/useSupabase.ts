@@ -71,12 +71,43 @@ export function useSupabase() {
           filter: `id=eq.${currentGame.id}`,
         },
         (payload) => {
-          console.log('Game updated:', payload);
-          setCurrentGame(payload.new as Game);
+          console.log('Game updated via realtime:', payload);
+          const newGame = payload.new as Game;
+          console.log('Setting new game data:', {
+            id: newGame.id,
+            current_number: newGame.current_number,
+            drawn_numbers: newGame.drawn_numbers
+          });
+          setCurrentGame(newGame);
         }
       )
       .subscribe((status) => {
         console.log('Game channel status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Game channel successfully subscribed');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Game channel error - falling back to polling');
+          // エラーの場合はポーリングにフォールバック
+          const pollInterval = setInterval(async () => {
+            try {
+              const { data } = await supabase
+                .from('games')
+                .select('*')
+                .eq('id', currentGame.id)
+                .single();
+              if (data) {
+                setCurrentGame(data);
+              }
+            } catch (error) {
+              console.error('Polling error:', error);
+            }
+          }, 2000);
+          
+          // 10秒後にポーリング停止
+          setTimeout(() => {
+            clearInterval(pollInterval);
+          }, 10000);
+        }
       });
 
     const cardChannel = supabase

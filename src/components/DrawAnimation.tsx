@@ -15,18 +15,24 @@ export default function DrawAnimation({ isVisible, drawnNumber, hasNumberOnCard 
 
   useEffect(() => {
     if (isVisible) {
+      console.log('DrawAnimation: Starting animation');
       setAnimationState('spinning');
       const timer = setTimeout(() => {
+        console.log('DrawAnimation: Switching to reveal');
         setAnimationState('reveal');
         // onCompleteは呼ばない（親コンポーネントが固定時間で制御）
       }, 2000);
       return () => clearTimeout(timer);
     } else {
+      console.log('DrawAnimation: Hiding animation');
       setAnimationState('hidden');
     }
   }, [isVisible]);
 
-  if (!isVisible) return null;
+  if (!isVisible || drawnNumber === null) {
+    console.log('DrawAnimation: Not visible or no number', { isVisible, drawnNumber });
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50 animate-fadeIn">

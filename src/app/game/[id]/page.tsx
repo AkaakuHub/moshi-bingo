@@ -176,59 +176,84 @@ export default function GamePage() {
     }
   }, [currentGame, currentUser, bingoCard, cardInitialized, cardLoading, gameId, createBingoCard]);
 
-  // 参加者側で抽選アニメーション表示
+  // 参加者側で抽選アニメーション表示 - シンプルな実装
   useEffect(() => {
-    if (currentGame && currentUser?.role === 'participant' && currentGame.current_number && bingoCard) {
-      // 新しい番号が抽選されたかチェック（リロード時は表示しない）
-      if (currentGame.current_number !== lastDrawnNumber && lastDrawnNumber !== null) {
-        console.log('Participant sees new number:', currentGame.current_number);
-        setLastDrawnNumber(currentGame.current_number);
-        
-        // 既にアニメーション中の場合は一旦キャンセル
-        if (showAnimation) {
-          console.log('Animation already playing, resetting...');
-          setShowAnimation(false);
-          setIsDrawing(false);
-        }
-        
-        // 少し待ってから新しいアニメーションを開始（確実に表示させるため）
-        setTimeout(() => {
-          // 自分のカードに該当番号があるかチェック
-          const drawnNumber = currentGame.current_number;
-          let hasNumber = false;
-          
-          for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < 5; col++) {
-              if (bingoCard.numbers[row][col] === drawnNumber) {
-                hasNumber = true;
-                break;
-              }
-            }
-            if (hasNumber) break;
-          }
-          
-          console.log('Starting animation for number:', drawnNumber, 'hasNumber:', hasNumber);
-          setHasNumberOnCard(hasNumber);
-          setIsDrawing(true);
-          setShowAnimation(true);
-          
-          // 固定時間（4秒）後に必ずアニメーションを終了
-          const animationTimer = setTimeout(() => {
-            console.log('Animation complete');
-            setShowAnimation(false);
-            setIsDrawing(false);
-            setHasNumberOnCard(false); // リセット
-          }, 4000); // 4秒間確実に表示
-          
-          // クリーンアップ関数でタイマーをクリア
-          return () => clearTimeout(animationTimer);
-        }, 100); // 100ms待機してから開始
-      } else if (lastDrawnNumber === null) {
-        // 初回ロード時は現在の番号を設定するだけ
-        setLastDrawnNumber(currentGame.current_number);
-      }
+    // 基本条件チェック
+    if (!currentGame || !currentUser || currentUser.role !== 'participant' || !bingoCard) {
+      return;
     }
-  }, [currentGame?.current_number, currentUser?.role, bingoCard, lastDrawnNumber, showAnimation, currentGame]);
+
+    // 現在の番号が存在しない場合
+    if (!currentGame.current_number) {
+      return;
+    }
+
+    // 初回ロード時は番号を設定するだけ
+    if (lastDrawnNumber === null) {
+      console.log('Initial load - setting last drawn number:', currentGame.current_number);
+      setLastDrawnNumber(currentGame.current_number);
+      return;
+    }
+
+    // 番号が変わった場合のみアニメーション表示
+    if (currentGame.current_number !== lastDrawnNumber) {
+      console.log('NEW NUMBER DETECTED:', {
+        new: currentGame.current_number,
+        old: lastDrawnNumber,
+        isAnimating: showAnimation
+      });
+
+      // 番号を更新
+      setLastDrawnNumber(currentGame.current_number);
+
+      // 既にアニメーション中の場合は停止
+      if (showAnimation || isDrawing) {
+        console.log('Stopping current animation');
+        setShowAnimation(false);
+        setIsDrawing(false);
+        setHasNumberOnCard(false);
+      }
+
+      // 新しいアニメーションを開始
+      const drawnNumber = currentGame.current_number;
+      let hasNumber = false;
+
+      // カード内の番号をチェック
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 5; col++) {
+          if (bingoCard.numbers[row][col] === drawnNumber) {
+            hasNumber = true;
+            break;
+          }
+        }
+        if (hasNumber) break;
+      }
+
+      console.log('STARTING ANIMATION:', {
+        number: drawnNumber,
+        hasNumber,
+        cardNumbers: bingoCard.numbers.flat()
+      });
+
+      // 状態設定
+      setHasNumberOnCard(hasNumber);
+      setIsDrawing(true);
+      setShowAnimation(true);
+
+      // 5秒後に必ず終了
+      const animationTimeout = setTimeout(() => {
+        console.log('ANIMATION TIMEOUT - forcing end');
+        setShowAnimation(false);
+        setIsDrawing(false);
+        setHasNumberOnCard(false);
+      }, 5000);
+
+      // クリーンアップ
+      return () => {
+        clearTimeout(animationTimeout);
+      };
+    }
+  }, [currentGame?.current_number, currentUser?.role, bingoCard?.numbers, lastDrawnNumber]);
 
   const handleCellClick = (row: number, col: number) => {
     if (!bingoCard || !currentGame) return;
