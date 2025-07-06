@@ -188,11 +188,59 @@ export default function GamePage() {
       return;
     }
 
-    // 初回ロード時は番号を設定するだけ
+    // 初回ロード時の処理
     if (lastDrawnNumber === null) {
-      console.log('Initial load - setting last drawn number:', currentGame.current_number);
-      setLastDrawnNumber(currentGame.current_number);
-      return;
+      console.log('Initial load - checking if should show animation for:', currentGame.current_number);
+      
+      // ゲームが始まっていて、drawn_numbersに番号があれば演出を表示
+      if (currentGame.drawn_numbers && currentGame.drawn_numbers.length > 0) {
+        console.log('Game already started - showing animation for current number');
+        setLastDrawnNumber(currentGame.current_number);
+        
+        // 演出を表示
+        const drawnNumber = currentGame.current_number;
+        let hasNumber = false;
+
+        // カード内の番号をチェック
+        for (let row = 0; row < 5; row++) {
+          for (let col = 0; col < 5; col++) {
+            if (bingoCard.numbers[row][col] === drawnNumber) {
+              hasNumber = true;
+              break;
+            }
+          }
+          if (hasNumber) break;
+        }
+
+        console.log('INITIAL ANIMATION:', {
+          number: drawnNumber,
+          hasNumber,
+          cardNumbers: bingoCard.numbers.flat()
+        });
+
+        // 状態設定
+        setHasNumberOnCard(hasNumber);
+        setIsDrawing(true);
+        setShowAnimation(true);
+
+        // 3秒後に必ず終了
+        const animationTimeout = setTimeout(() => {
+          console.log('INITIAL ANIMATION TIMEOUT - forcing end');
+          setShowAnimation(false);
+          setIsDrawing(false);
+          setHasNumberOnCard(false);
+        }, 3000);
+
+        // クリーンアップ
+        return () => {
+          clearTimeout(animationTimeout);
+        };
+      } else {
+        // ゲームがまだ始まっていない場合は番号を設定するだけ
+        console.log('Game not started yet - just setting last drawn number');
+        setLastDrawnNumber(currentGame.current_number);
+        return;
+      }
     }
 
     // 番号が変わった場合のみアニメーション表示
@@ -240,13 +288,13 @@ export default function GamePage() {
       setIsDrawing(true);
       setShowAnimation(true);
 
-      // 5秒後に必ず終了
+      // 3秒後に必ず終了
       const animationTimeout = setTimeout(() => {
         console.log('ANIMATION TIMEOUT - forcing end');
         setShowAnimation(false);
         setIsDrawing(false);
         setHasNumberOnCard(false);
-      }, 5000);
+      }, 3000);
 
       // クリーンアップ
       return () => {
