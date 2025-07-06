@@ -71,6 +71,38 @@ export function checkBingo(markedCells: boolean[][]): boolean {
   return false;
 }
 
+export function checkReach(markedCells: boolean[][]): boolean {
+  // Check rows for reach (4 out of 5 marked)
+  for (let row = 0; row < 5; row++) {
+    const markedCount = markedCells[row].filter(cell => cell).length;
+    if (markedCount === 4) {
+      return true;
+    }
+  }
+  
+  // Check columns for reach
+  for (let col = 0; col < 5; col++) {
+    const markedCount = markedCells.filter(row => row[col]).length;
+    if (markedCount === 4) {
+      return true;
+    }
+  }
+  
+  // Check diagonal (top-left to bottom-right) for reach
+  const diagonal1Count = markedCells.filter((row, i) => row[i]).length;
+  if (diagonal1Count === 4) {
+    return true;
+  }
+  
+  // Check diagonal (top-right to bottom-left) for reach
+  const diagonal2Count = markedCells.filter((row, i) => row[4 - i]).length;
+  if (diagonal2Count === 4) {
+    return true;
+  }
+  
+  return false;
+}
+
 export function drawRandomNumber(excludeNumbers: number[]): number {
   const availableNumbers = Array.from({ length: 75 }, (_, i) => i + 1)
     .filter(num => !excludeNumbers.includes(num));

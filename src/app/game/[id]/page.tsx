@@ -5,8 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import BingoCard from '@/components/BingoCard';
 import HostPanel from '@/components/HostPanel';
 import DrawAnimation from '@/components/DrawAnimation';
+import ReachAnimation from '@/components/ReachAnimation';
+import BingoAnimation from '@/components/BingoAnimation';
 import DrawnNumbers from '@/components/DrawnNumbers';
-import { generateBingoCard, checkBingo, drawRandomNumber } from '@/utils/bingoUtils';
+import { generateBingoCard, checkBingo, checkReach, drawRandomNumber } from '@/utils/bingoUtils';
 import { useSupabase } from '@/hooks/useSupabase';
 import { saveMarkedCells, getMarkedCells } from '@/utils/sessionUtils';
 import { supabase } from '@/lib/supabase';
@@ -34,6 +36,9 @@ export default function GamePage() {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [hasNumberOnCard, setHasNumberOnCard] = useState(false);
   const [hostDisplayNumber, setHostDisplayNumber] = useState<number | null>(null);
+  const [showReachAnimation, setShowReachAnimation] = useState(false);
+  const [showBingoAnimation, setShowBingoAnimation] = useState(false);
+  const [wasReach, setWasReach] = useState(false);
 
   const { 
     currentGame, 
@@ -317,10 +322,22 @@ export default function GamePage() {
     newMarked[row][col] = true;
     
     const hasBingo = checkBingo(newMarked);
+    const hasReach = !hasBingo && checkReach(newMarked);
+    
     setMarkedCells(newMarked);
     
     // localStorageに保存
     saveMarkedCells(gameId, newMarked);
+    
+    // 演出の表示
+    if (hasBingo) {
+      console.log('BINGO achieved!');
+      setShowBingoAnimation(true);
+    } else if (hasReach && !wasReach) {
+      console.log('REACH achieved!');
+      setShowReachAnimation(true);
+      setWasReach(true);
+    }
     
     // Supabaseのビンゴ状態のみ更新
     updateBingoCard(newMarked, hasBingo);
@@ -356,6 +373,14 @@ export default function GamePage() {
   const handleAnimationComplete = () => {
     setShowAnimation(false);
     setIsDrawing(false);
+  };
+
+  const handleReachAnimationComplete = () => {
+    setShowReachAnimation(false);
+  };
+
+  const handleBingoAnimationComplete = () => {
+    setShowBingoAnimation(false);
   };
 
   if (!currentGame) {
@@ -524,7 +549,10 @@ export default function GamePage() {
                 markedCells={markedCells}
                 isParticipant={true}
               />
-              <DrawnNumbers drawnNumbers={currentGame.drawn_numbers || []} />
+              <DrawnNumbers 
+                drawnNumbers={currentGame.drawn_numbers || []} 
+                playerNumbers={bingoCard.numbers}
+              />
               {bingoCard.has_bingo && (
                 <div className="lg:col-span-2 mt-6 p-6 bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl text-center animate-bounce card-shadow-lg">
                   <span className="text-3xl font-bold text-white animate-sparkle">🎉 ビンゴ！🎉</span>
@@ -540,6 +568,16 @@ export default function GamePage() {
           onComplete={handleAnimationComplete}
           hasNumberOnCard={hasNumberOnCard}
           isParticipant={currentUser.role === 'participant'}
+        />
+
+        <ReachAnimation
+          isVisible={showReachAnimation}
+          onComplete={handleReachAnimationComplete}
+        />
+
+        <BingoAnimation
+          isVisible={showBingoAnimation}
+          onComplete={handleBingoAnimationComplete}
         />
       </div>
     </div>
