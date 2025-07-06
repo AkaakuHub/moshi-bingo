@@ -122,7 +122,7 @@ export function useSupabase() {
       supabase.removeChannel(cardChannel);
       supabase.removeChannel(usersChannel);
     };
-  }, [currentGame?.id, bingoCard?.id, fetchParticipants]);
+  }, [currentGame, bingoCard?.id, fetchParticipants]);
 
   const createGame = async (gameName: string, hostName: string) => {
     try {
