@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface BingoAnimationProps {
   isVisible: boolean;
@@ -10,10 +10,10 @@ interface BingoAnimationProps {
 export default function BingoAnimation({ isVisible, onComplete }: BingoAnimationProps) {
   const [animationState, setAnimationState] = useState<'hidden' | 'fireworks' | 'celebration'>('hidden');
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setAnimationState('hidden');
     onComplete();
-  };
+  }, [onComplete]);
 
   useEffect(() => {
     if (isVisible) {
@@ -39,7 +39,7 @@ export default function BingoAnimation({ isVisible, onComplete }: BingoAnimation
       console.log('BingoAnimation: Hiding animation');
       setAnimationState('hidden');
     }
-  }, [isVisible]);
+  }, [isVisible, handleClose]);
 
   if (!isVisible) {
     return null;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useCallback } from 'react';
 
 interface ReachAnimationProps {
   isVisible: boolean;
@@ -8,17 +8,13 @@ interface ReachAnimationProps {
 }
 
 export default function ReachAnimation({ isVisible, onComplete }: ReachAnimationProps) {
-  const [animationState, setAnimationState] = useState<'hidden' | 'showing'>('hidden');
-
-  const handleClose = () => {
-    setAnimationState('hidden');
+  const handleClose = useCallback(() => {
     onComplete();
-  };
+  }, [onComplete]);
 
   useEffect(() => {
     if (isVisible) {
       console.log('ReachAnimation: Starting animation');
-      setAnimationState('showing');
       
       // 3秒後に自動で閉じる
       const timer = setTimeout(() => {
@@ -29,9 +25,8 @@ export default function ReachAnimation({ isVisible, onComplete }: ReachAnimation
       return () => clearTimeout(timer);
     } else {
       console.log('ReachAnimation: Hiding animation');
-      setAnimationState('hidden');
     }
-  }, [isVisible]);
+  }, [isVisible, handleClose]);
 
   if (!isVisible) {
     return null;
