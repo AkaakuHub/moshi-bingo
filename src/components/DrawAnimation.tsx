@@ -18,13 +18,13 @@ export default function DrawAnimation({ isVisible, drawnNumber, onComplete, hasN
       setAnimationState('spinning');
       const timer = setTimeout(() => {
         setAnimationState('reveal');
-        setTimeout(onComplete, 1500);
+        // onCompleteは呼ばない（親コンポーネントが固定時間で制御）
       }, 2000);
       return () => clearTimeout(timer);
     } else {
       setAnimationState('hidden');
     }
-  }, [isVisible, onComplete]);
+  }, [isVisible]);
 
   if (!isVisible) return null;
 

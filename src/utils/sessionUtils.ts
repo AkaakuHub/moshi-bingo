@@ -6,13 +6,17 @@ const MARKED_CELLS_KEY = 'bingo-marked-cells';
 export function getOrCreateSessionId(): string {
   if (typeof window === 'undefined') return '';
   
-  let sessionId = localStorage.getItem(SESSION_ID_KEY);
+  // ゲームごとにセッションIDを管理
+  const gameId = window.location.pathname.split('/')[2]; // /game/[id] から取得
+  const sessionKey = gameId ? `${SESSION_ID_KEY}-${gameId}` : SESSION_ID_KEY;
+  
+  let sessionId = localStorage.getItem(sessionKey);
   if (!sessionId) {
     sessionId = uuidv4();
-    localStorage.setItem(SESSION_ID_KEY, sessionId);
-    console.log('Created new session ID:', sessionId);
+    localStorage.setItem(sessionKey, sessionId);
+    console.log('Created new session ID for game:', gameId, sessionId);
   } else {
-    console.log('Using existing session ID:', sessionId);
+    console.log('Using existing session ID for game:', gameId, sessionId);
   }
   
   return sessionId;

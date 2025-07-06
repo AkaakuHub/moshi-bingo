@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getOrCreateSessionId, getSessionId } from '@/utils/sessionUtils';
 
@@ -27,7 +27,7 @@ export interface BingoCard {
   has_bingo: boolean;
   user_id: string;
   game_id: string;
-  session_id: string;
+  session_id?: string; // オプショナルに変更
 }
 
 export function useSupabase() {
@@ -200,7 +200,7 @@ export function useSupabase() {
     }
   };
 
-  const createBingoCard = async (numbers: number[][]) => {
+  const createBingoCard = useCallback(async (numbers: number[][]) => {
     const sessionId = getOrCreateSessionId();
     console.log('createBingoCard called:', {
       hasCurrentUser: !!currentUser,
@@ -217,24 +217,24 @@ export function useSupabase() {
 
     setCardCreated(true);
     try {
+      const cardData = {
+        user_id: currentUser.id,
+        game_id: currentGame.id,
+        session_id: sessionId,
+        numbers,
+        marked_cells: Array(5).fill(null).map(() => Array(5).fill(false)),
+        has_bingo: false,
+      };
+
       const { data, error } = await supabase
         .from('bingo_cards')
-        .insert([
-          {
-            user_id: currentUser.id,
-            game_id: currentGame.id,
-            session_id: sessionId,
-            numbers,
-            marked_cells: Array(5).fill(null).map(() => Array(5).fill(false)),
-            has_bingo: false,
-          },
-        ])
+        .insert([cardData])
         .select()
         .single();
 
       if (error) throw error;
 
-      console.log('New bingo card created with session ID:', sessionId, data);
+      console.log('New bingo card created:', data);
       setBingoCard(data);
       return data;
     } catch (error) {
@@ -242,7 +242,7 @@ export function useSupabase() {
       setCardCreated(false);
       throw error;
     }
-  };
+  }, [currentUser, currentGame, bingoCard, cardCreated]);
 
   const updateBingoCard = async (markedCells: boolean[][], hasBingo: boolean) => {
     if (!bingoCard) return;
@@ -357,10 +357,11 @@ export function useSupabase() {
           if (userData.game_id === gameId) {
             setCurrentUser(userData);
             
-            // 参加者の場合、既存のビンゴカードを取得（セッションIDベース）
+            // 参加者の場合、既存のビンゴカードを取得（セッションIDベースのみ）
             if (userData.role === 'participant') {
               const sessionId = getOrCreateSessionId();
               console.log('Loading existing bingo card for session:', sessionId);
+              
               const { data: cardData, error: cardError } = await supabase
                 .from('bingo_cards')
                 .select('*')
@@ -370,6 +371,8 @@ export function useSupabase() {
 
               if (cardError) {
                 console.log('No existing bingo card found for session:', sessionId, cardError);
+                // カードが見つからない = 新規作成が必要
+                setCardCreated(false);
               } else if (cardData) {
                 console.log('Existing bingo card loaded for session:', sessionId, cardData);
                 setBingoCard(cardData);

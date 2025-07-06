@@ -8,6 +8,15 @@ interface BingoCardProps {
 }
 
 export default function BingoCard({ numbers, onCellClick, markedCells, isParticipant }: BingoCardProps) {
+  // 安全性チェック
+  if (!numbers || !markedCells || numbers.length !== 5 || markedCells.length !== 5) {
+    return (
+      <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-6 card-shadow-lg">
+        <p className="text-center text-gray-600">ビンゴカードを読み込み中...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-6 card-shadow-lg sparkle-bg">
       <h2 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
@@ -20,7 +29,7 @@ export default function BingoCard({ numbers, onCellClick, markedCells, isPartici
               key={`${rowIndex}-${colIndex}`}
               className={`
                 w-12 h-12 sm:w-14 sm:h-14 text-sm sm:text-lg font-bold border-2 rounded-xl transition-all duration-300
-                ${markedCells[rowIndex][colIndex] 
+                ${markedCells[rowIndex] && markedCells[rowIndex][colIndex] 
                   ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white border-green-300 shadow-lg' 
                   : 'bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 border-gray-300 hover:border-indigo-300'
                 }

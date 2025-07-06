@@ -8,6 +8,8 @@ import DrawAnimation from '@/components/DrawAnimation';
 import DrawnNumbers from '@/components/DrawnNumbers';
 import { generateBingoCard, checkBingo, drawRandomNumber } from '@/utils/bingoUtils';
 import { useSupabase } from '@/hooks/useSupabase';
+import { saveMarkedCells, getMarkedCells } from '@/utils/sessionUtils';
+import { supabase } from '@/lib/supabase';
 
 export default function GamePage() {
   const params = useParams();
@@ -20,13 +22,19 @@ export default function GamePage() {
   
   const [isDrawing, setIsDrawing] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
-  const [markedCells, setMarkedCells] = useState<boolean[][]>([]);
+  const [markedCells, setMarkedCells] = useState<boolean[][]>(() => {
+    const initialMarked = Array(5).fill(null).map(() => Array(5).fill(false));
+    initialMarked[2][2] = true; // FREE space
+    return initialMarked;
+  });
   const [lastDrawnNumber, setLastDrawnNumber] = useState<number | null>(null);
   const [cardInitialized, setCardInitialized] = useState(false);
+  const [cardLoading, setCardLoading] = useState(true);
   const [gameLoaded, setGameLoaded] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [hasNumberOnCard, setHasNumberOnCard] = useState(false);
   const [hostDisplayNumber, setHostDisplayNumber] = useState<number | null>(null);
+  const [animationNumber, setAnimationNumber] = useState<number | null>(null);
 
   const { 
     currentGame, 
@@ -45,11 +53,35 @@ export default function GamePage() {
   // URLのゲームIDでゲームをロード
   useEffect(() => {
     if (gameId && !gameLoaded) {
-      if (userId) {
-        loadGameWithUser(gameId, userId);
-      } else {
-        loadGame(gameId);
-      }
+      // ゲームをロード
+      const loadGameData = async () => {
+        try {
+          // まずゲームが存在するか確認
+          const { data: gameData, error: gameError } = await supabase
+            .from('games')
+            .select('*')
+            .eq('id', gameId)
+            .single();
+          
+          if (gameError || !gameData) {
+            console.error('Game not found:', gameId);
+            router.push('/');
+            return;
+          }
+          
+          // ゲームが存在する場合、通常の処理
+          if (userId) {
+            loadGameWithUser(gameId, userId);
+          } else {
+            loadGame(gameId);
+          }
+        } catch (error) {
+          console.error('Error checking game:', error);
+          router.push('/');
+        }
+      };
+      
+      loadGameData();
       setGameLoaded(true);
       
       // タイムアウト設定（10秒後にエラー画面を表示）
@@ -59,7 +91,7 @@ export default function GamePage() {
       
       return () => clearTimeout(timer);
     }
-  }, [gameId, userId, gameLoaded, loadGame, loadGameWithUser]);
+  }, [gameId, userId, gameLoaded]);
 
   // 初期値設定とアニメーション終了後の同期
   useEffect(() => {
@@ -81,6 +113,18 @@ export default function GamePage() {
     }
   }, [gameLoaded, currentGame, gameId, router]);
 
+  // カード読み込み状態を管理
+  useEffect(() => {
+    if (currentGame && currentUser && currentUser.role === 'participant') {
+      // 初回のみ、少し待ってからカード読み込み完了とする
+      const timer = setTimeout(() => {
+        console.log('Card loading complete, setting cardLoading to false');
+        setCardLoading(false);
+      }, 2000); // 2秒に延長
+      return () => clearTimeout(timer);
+    }
+  }, [currentGame, currentUser]);
+
   // ビンゴカード初期化または復元
   useEffect(() => {
     console.log('Card effect triggered:', {
@@ -88,21 +132,36 @@ export default function GamePage() {
       currentUser: currentUser?.role,
       bingoCard: !!bingoCard,
       cardInitialized,
+      cardLoading,
       bingoCardNumbers: bingoCard?.numbers
     });
 
-    if (currentGame && currentUser && currentUser.role === 'participant') {
+    if (currentGame && currentUser && currentUser.role === 'participant' && !cardLoading) {
       if (bingoCard) {
-        // 既存のカードがある場合、マークされたセルを復元
+        // 既存のカードがある場合、localStorageからマークされたセルを復元
         console.log('Restoring existing card with numbers:', bingoCard.numbers);
-        console.log('Restoring marked cells:', bingoCard.marked_cells);
-        setMarkedCells(bingoCard.marked_cells);
+        const savedMarkedCells = getMarkedCells(gameId);
+        if (savedMarkedCells) {
+          console.log('Restoring marked cells from localStorage:', savedMarkedCells);
+          setMarkedCells(savedMarkedCells);
+        } else {
+          console.log('No saved marked cells, using initial state');
+          const initialMarked = Array(5).fill(null).map(() => Array(5).fill(false));
+          initialMarked[2][2] = true; // FREE space
+          setMarkedCells(initialMarked);
+        }
         if (!cardInitialized) {
           setCardInitialized(true);
         }
-      } else if (!cardInitialized) {
-        // 新規カード作成（最初のゲーム参加時のみ）
-        console.log('Creating new bingo card - first time joining');
+      } else if (!cardInitialized && !bingoCard) {
+        // 新規カード作成（既存カードが見つからない場合のみ）
+        console.log('DEBUG: About to create new card', {
+          cardInitialized,
+          bingoCard,
+          currentUser,
+          currentGame,
+          sessionId: typeof window !== 'undefined' ? localStorage.getItem(`bingo-session-id-${gameId}`) : null
+        });
         setCardInitialized(true);
         const card = generateBingoCard();
         console.log('Generated new card:', card);
@@ -113,11 +172,12 @@ export default function GamePage() {
       } else {
         console.log('Card effect - no action needed:', {
           hasBingoCard: !!bingoCard,
-          cardInitialized
+          cardInitialized,
+          cardLoading
         });
       }
     }
-  }, [currentGame, currentUser, bingoCard, cardInitialized]);
+  }, [currentGame, currentUser, bingoCard, cardInitialized, cardLoading, gameId, createBingoCard]);
 
   // 参加者側で抽選アニメーション表示
   useEffect(() => {
@@ -127,35 +187,51 @@ export default function GamePage() {
         console.log('Participant sees new number:', currentGame.current_number);
         setLastDrawnNumber(currentGame.current_number);
         
-        // 自分のカードに該当番号があるかチェック
-        const drawnNumber = currentGame.current_number;
-        let hasNumber = false;
-        
-        for (let row = 0; row < 5; row++) {
-          for (let col = 0; col < 5; col++) {
-            if (bingoCard.numbers[row][col] === drawnNumber) {
-              hasNumber = true;
-              break;
-            }
-          }
-          if (hasNumber) break;
-        }
-        
-        setHasNumberOnCard(hasNumber);
-        setIsDrawing(true);
-        setShowAnimation(true);
-        
-        setTimeout(() => {
+        // 既にアニメーション中の場合は一旦キャンセル
+        if (showAnimation) {
+          console.log('Animation already playing, resetting...');
           setShowAnimation(false);
           setIsDrawing(false);
-          setHasNumberOnCard(false); // リセット
-        }, 3500);
+        }
+        
+        // 少し待ってから新しいアニメーションを開始（確実に表示させるため）
+        setTimeout(() => {
+          // 自分のカードに該当番号があるかチェック
+          const drawnNumber = currentGame.current_number;
+          let hasNumber = false;
+          
+          for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 5; col++) {
+              if (bingoCard.numbers[row][col] === drawnNumber) {
+                hasNumber = true;
+                break;
+              }
+            }
+            if (hasNumber) break;
+          }
+          
+          console.log('Starting animation for number:', drawnNumber, 'hasNumber:', hasNumber);
+          setHasNumberOnCard(hasNumber);
+          setIsDrawing(true);
+          setShowAnimation(true);
+          
+          // 固定時間（4秒）後に必ずアニメーションを終了
+          const animationTimer = setTimeout(() => {
+            console.log('Animation complete');
+            setShowAnimation(false);
+            setIsDrawing(false);
+            setHasNumberOnCard(false); // リセット
+          }, 4000); // 4秒間確実に表示
+          
+          // クリーンアップ関数でタイマーをクリア
+          return () => clearTimeout(animationTimer);
+        }, 100); // 100ms待機してから開始
       } else if (lastDrawnNumber === null) {
         // 初回ロード時は現在の番号を設定するだけ
         setLastDrawnNumber(currentGame.current_number);
       }
     }
-  }, [currentGame?.current_number, currentUser?.role, lastDrawnNumber, bingoCard]);
+  }, [currentGame?.current_number, currentUser?.role, bingoCard]);
 
   const handleCellClick = (row: number, col: number) => {
     if (!bingoCard || !currentGame) return;
@@ -172,6 +248,11 @@ export default function GamePage() {
     
     const hasBingo = checkBingo(newMarked);
     setMarkedCells(newMarked);
+    
+    // localStorageに保存
+    saveMarkedCells(gameId, newMarked);
+    
+    // Supabaseのビンゴ状態のみ更新
     updateBingoCard(newMarked, hasBingo);
   };
 

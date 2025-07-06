@@ -24,6 +24,7 @@
 - created_at: timestamp
 - user_id: UUID (外部キー: users.id)
 - game_id: UUID (外部キー: games.id)
+- session_id: text (セッションID)
 - numbers: jsonb (5x5の番号配列)
 - marked_cells: jsonb (マーク済みセルの配列)
 - has_bingo: boolean (ビンゴ達成フラグ)
@@ -93,6 +94,7 @@ CREATE TABLE bingo_cards (
     created_at TIMESTAMP DEFAULT NOW(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     game_id UUID REFERENCES games(id) ON DELETE CASCADE,
+    session_id TEXT,
     numbers JSONB NOT NULL,
     marked_cells JSONB DEFAULT '[]'::jsonb,
     has_bingo BOOLEAN DEFAULT FALSE
@@ -121,4 +123,14 @@ CREATE POLICY "Allow all access to games" ON games FOR ALL USING (true);
 CREATE POLICY "Allow all access to users" ON users FOR ALL USING (true);
 CREATE POLICY "Allow all access to bingo_cards" ON bingo_cards FOR ALL USING (true);
 CREATE POLICY "Allow all access to game_events" ON game_events FOR ALL USING (true);
+
+-- Add session_id column and index
+ALTER TABLE bingo_cards ADD COLUMN IF NOT EXISTS session_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_bingo_cards_session_id ON bingo_cards(session_id);
+
+-- Enable realtime for all tables
+ALTER PUBLICATION supabase_realtime ADD TABLE games;
+ALTER PUBLICATION supabase_realtime ADD TABLE users;
+ALTER PUBLICATION supabase_realtime ADD TABLE bingo_cards;
+ALTER PUBLICATION supabase_realtime ADD TABLE game_events;
 ```
