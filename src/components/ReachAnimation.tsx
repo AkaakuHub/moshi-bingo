@@ -5,9 +5,10 @@ import { useEffect, useCallback } from 'react';
 interface ReachAnimationProps {
   isVisible: boolean;
   onComplete: () => void;
+  missingNumbers?: number[]; // リーチに必要な数字
 }
 
-export default function ReachAnimation({ isVisible, onComplete }: ReachAnimationProps) {
+export default function ReachAnimation({ isVisible, onComplete, missingNumbers = [] }: ReachAnimationProps) {
   const handleClose = useCallback(() => {
     onComplete();
   }, [onComplete]);
@@ -58,6 +59,24 @@ export default function ReachAnimation({ isVisible, onComplete }: ReachAnimation
           <div className="text-xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
             あと1つでビンゴ！
           </div>
+          {missingNumbers.length > 0 && (
+            <div className="text-sm text-gray-700 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <div className="text-xs text-gray-500 mb-2">🎯 必要な番号</div>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {missingNumbers.map((number, index) => (
+                  <span 
+                    key={index}
+                    className="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 text-white font-bold text-sm rounded-full border-2 border-yellow-300 shadow-md"
+                  >
+                    {number}
+                  </span>
+                ))}
+              </div>
+              <div className="text-xs text-gray-500 mt-2 text-center">
+                これらの番号が出ればビンゴです！
+              </div>
+            </div>
+          )}
           <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
             🎯 次の番号に注目しよう！
           </div>

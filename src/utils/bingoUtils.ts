@@ -103,6 +103,59 @@ export function checkReach(markedCells: boolean[][]): boolean {
   return false;
 }
 
+export function getMissingNumbersForReach(markedCells: boolean[][], numbers: number[][]): number[] {
+  const missingNumbers: number[] = [];
+
+  // Check rows for reach (4 out of 5 marked)
+  for (let row = 0; row < 5; row++) {
+    const markedCount = markedCells[row].filter(cell => cell).length;
+    if (markedCount === 4) {
+      // 未マークのセルの番号を取得
+      for (let col = 0; col < 5; col++) {
+        if (!markedCells[row][col]) {
+          missingNumbers.push(numbers[row][col]);
+        }
+      }
+    }
+  }
+  
+  // Check columns for reach
+  for (let col = 0; col < 5; col++) {
+    const markedCount = markedCells.filter(row => row[col]).length;
+    if (markedCount === 4) {
+      // 未マークのセルの番号を取得
+      for (let row = 0; row < 5; row++) {
+        if (!markedCells[row][col]) {
+          missingNumbers.push(numbers[row][col]);
+        }
+      }
+    }
+  }
+  
+  // Check diagonal (top-left to bottom-right) for reach
+  const diagonal1Count = markedCells.filter((row, i) => row[i]).length;
+  if (diagonal1Count === 4) {
+    for (let i = 0; i < 5; i++) {
+      if (!markedCells[i][i]) {
+        missingNumbers.push(numbers[i][i]);
+      }
+    }
+  }
+  
+  // Check diagonal (top-right to bottom-left) for reach
+  const diagonal2Count = markedCells.filter((row, i) => row[4 - i]).length;
+  if (diagonal2Count === 4) {
+    for (let i = 0; i < 5; i++) {
+      if (!markedCells[i][4 - i]) {
+        missingNumbers.push(numbers[i][4 - i]);
+      }
+    }
+  }
+  
+  // 重複を除去して返す
+  return [...new Set(missingNumbers)];
+}
+
 export function drawRandomNumber(excludeNumbers: number[]): number {
   const availableNumbers = Array.from({ length: 75 }, (_, i) => i + 1)
     .filter(num => !excludeNumbers.includes(num));

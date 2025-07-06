@@ -8,7 +8,7 @@ import DrawAnimation from '@/components/DrawAnimation';
 import ReachAnimation from '@/components/ReachAnimation';
 import BingoAnimation from '@/components/BingoAnimation';
 import DrawnNumbers from '@/components/DrawnNumbers';
-import { generateBingoCard, checkBingo, checkReach, drawRandomNumber } from '@/utils/bingoUtils';
+import { generateBingoCard, checkBingo, checkReach, getMissingNumbersForReach, drawRandomNumber } from '@/utils/bingoUtils';
 import { useSupabase } from '@/hooks/useSupabase';
 import { saveMarkedCells, getMarkedCells } from '@/utils/sessionUtils';
 import { supabase } from '@/lib/supabase';
@@ -38,7 +38,7 @@ export default function GamePage() {
   const [hostDisplayNumber, setHostDisplayNumber] = useState<number | null>(null);
   const [showReachAnimation, setShowReachAnimation] = useState(false);
   const [showBingoAnimation, setShowBingoAnimation] = useState(false);
-  const [wasReach, setWasReach] = useState(false);
+  const [reachMissingNumbers, setReachMissingNumbers] = useState<number[]>([]);
 
   const { 
     currentGame, 
@@ -257,11 +257,12 @@ export default function GamePage() {
               setTimeout(() => {
                 setShowBingoAnimation(true);
               }, 3500);
-            } else if (hasReach && !wasReach) {
+            } else if (hasReach) {
               console.log('INITIAL REACH achieved!');
+              const missingNumbers = getMissingNumbersForReach(newMarked, bingoCard.numbers);
+              setReachMissingNumbers(missingNumbers);
               setTimeout(() => {
                 setShowReachAnimation(true);
-                setWasReach(true);
               }, 3500);
             }
           }
@@ -362,12 +363,13 @@ export default function GamePage() {
             setTimeout(() => {
               setShowBingoAnimation(true);
             }, 3500);
-          } else if (hasReach && !wasReach) {
+          } else if (hasReach) {
             console.log('AUTO REACH achieved!');
+            const missingNumbers = getMissingNumbersForReach(newMarked, bingoCard.numbers);
+            setReachMissingNumbers(missingNumbers);
             // リーチ演出は抽選演出後に表示（少し遅延）
             setTimeout(() => {
               setShowReachAnimation(true);
-              setWasReach(true);
             }, 3500);
           }
         }
@@ -413,10 +415,11 @@ export default function GamePage() {
     if (hasBingo) {
       console.log('BINGO achieved!');
       setShowBingoAnimation(true);
-    } else if (hasReach && !wasReach) {
+    } else if (hasReach) {
       console.log('REACH achieved!');
+      const missingNumbers = getMissingNumbersForReach(newMarked, bingoCard.numbers);
+      setReachMissingNumbers(missingNumbers);
       setShowReachAnimation(true);
-      setWasReach(true);
     }
     
     // Supabaseのビンゴ状態のみ更新
@@ -653,6 +656,7 @@ export default function GamePage() {
         <ReachAnimation
           isVisible={showReachAnimation}
           onComplete={handleReachAnimationComplete}
+          missingNumbers={reachMissingNumbers}
         />
 
         <BingoAnimation
