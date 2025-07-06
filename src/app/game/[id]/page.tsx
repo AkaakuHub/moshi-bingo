@@ -228,6 +228,45 @@ export default function GamePage() {
         setIsDrawing(true);
         setShowAnimation(true);
 
+        // 自動マーク機能：初回ロード時も自動でマークする
+        if (hasNumber) {
+          const newMarked = [...markedCells];
+          let markedSomething = false;
+
+          for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 5; col++) {
+              if (bingoCard.numbers[row][col] === drawnNumber && !newMarked[row][col]) {
+                newMarked[row][col] = true;
+                markedSomething = true;
+                console.log('Auto-marked cell on initial load:', row, col, drawnNumber);
+              }
+            }
+          }
+
+          if (markedSomething) {
+            const hasBingo = checkBingo(newMarked);
+            const hasReach = !hasBingo && checkReach(newMarked);
+            
+            setMarkedCells(newMarked);
+            saveMarkedCells(gameId, newMarked);
+            updateBingoCard(newMarked, hasBingo);
+
+            // 演出の表示（リーチ・ビンゴ）
+            if (hasBingo) {
+              console.log('INITIAL BINGO achieved!');
+              setTimeout(() => {
+                setShowBingoAnimation(true);
+              }, 3500);
+            } else if (hasReach && !wasReach) {
+              console.log('INITIAL REACH achieved!');
+              setTimeout(() => {
+                setShowReachAnimation(true);
+                setWasReach(true);
+              }, 3500);
+            }
+          }
+        }
+
         // 3秒後に必ず終了
         const animationTimeout = setTimeout(() => {
           console.log('INITIAL ANIMATION TIMEOUT - forcing end');
@@ -292,6 +331,47 @@ export default function GamePage() {
       setHasNumberOnCard(hasNumber);
       setIsDrawing(true);
       setShowAnimation(true);
+
+      // 自動マーク機能：自分のカードに番号がある場合、自動でマークする
+      if (hasNumber) {
+        const newMarked = [...markedCells];
+        let markedSomething = false;
+
+        for (let row = 0; row < 5; row++) {
+          for (let col = 0; col < 5; col++) {
+            if (bingoCard.numbers[row][col] === drawnNumber && !newMarked[row][col]) {
+              newMarked[row][col] = true;
+              markedSomething = true;
+              console.log('Auto-marked cell:', row, col, drawnNumber);
+            }
+          }
+        }
+
+        if (markedSomething) {
+          const hasBingo = checkBingo(newMarked);
+          const hasReach = !hasBingo && checkReach(newMarked);
+          
+          setMarkedCells(newMarked);
+          saveMarkedCells(gameId, newMarked);
+          updateBingoCard(newMarked, hasBingo);
+
+          // 演出の表示（リーチ・ビンゴ）
+          if (hasBingo) {
+            console.log('AUTO BINGO achieved!');
+            // ビンゴ演出は抽選演出後に表示（少し遅延）
+            setTimeout(() => {
+              setShowBingoAnimation(true);
+            }, 3500);
+          } else if (hasReach && !wasReach) {
+            console.log('AUTO REACH achieved!');
+            // リーチ演出は抽選演出後に表示（少し遅延）
+            setTimeout(() => {
+              setShowReachAnimation(true);
+              setWasReach(true);
+            }, 3500);
+          }
+        }
+      }
 
       // 3秒後に必ず終了
       const animationTimeout = setTimeout(() => {

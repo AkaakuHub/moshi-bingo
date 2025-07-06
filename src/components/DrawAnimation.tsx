@@ -13,10 +13,7 @@ interface DrawAnimationProps {
 export default function DrawAnimation({ isVisible, drawnNumber, onComplete, hasNumberOnCard = false, isParticipant = false }: DrawAnimationProps) {
   const [animationState, setAnimationState] = useState<'hidden' | 'spinning' | 'reveal'>('hidden');
 
-  const handleClose = () => {
-    setAnimationState('hidden');
-    onComplete();
-  };
+  // 発表演出中は手動で閉じることができない（固定時間で自動終了のみ）
 
   useEffect(() => {
     if (isVisible) {
@@ -42,11 +39,10 @@ export default function DrawAnimation({ isVisible, drawnNumber, onComplete, hasN
   return (
     <div 
       className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50 animate-fadeIn"
-      onClick={handleClose}
+      // 発表演出中は外クリックで閉じない
     >
       <div 
         className="bg-white/95 backdrop-blur-md rounded-2xl p-8 text-center card-shadow-lg animate-fadeIn max-w-sm mx-4"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="text-3xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
           けどけどん！
