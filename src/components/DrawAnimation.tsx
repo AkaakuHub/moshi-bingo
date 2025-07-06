@@ -11,37 +11,50 @@ interface DrawAnimationProps {
 }
 
 export default function DrawAnimation({ isVisible, drawnNumber, onComplete, hasNumberOnCard = false, isParticipant = false }: DrawAnimationProps) {
-  const [animationState, setAnimationState] = useState<'hidden' | 'spinning' | 'reveal'>('hidden');
+  const [animationState, setAnimationState] = useState<'hidden' | 'spinning' | 'reveal' | 'clickable'>('hidden');
 
-  // 発表演出中は手動で閉じることができない（固定時間で自動終了のみ）
+  const handleClose = () => {
+    if (animationState === 'clickable') {
+      setAnimationState('hidden');
+      onComplete();
+    }
+  };
 
   useEffect(() => {
     if (isVisible) {
       console.log('DrawAnimation: Starting animation');
       setAnimationState('spinning');
       
-      // 2秒後にrevealフェーズに移行
+      // 1秒後にrevealフェーズに移行
       const revealTimer = setTimeout(() => {
         console.log('DrawAnimation: Switching to reveal');
         setAnimationState('reveal');
-      }, 2000);
+      }, 1000);
       
-      // 3秒後に自動でアニメーション終了
-      const completeTimer = setTimeout(() => {
-        console.log('DrawAnimation: Animation complete, calling onComplete');
-        setAnimationState('hidden');
-        onComplete();
-      }, 3000);
+      // 2秒後にクリック可能状態に移行（自分のカードにある場合は自動で閉じる）
+      const clickableTimer = setTimeout(() => {
+        console.log('DrawAnimation: Animation complete, now clickable');
+        setAnimationState('clickable');
+        
+        // 自分のカードにある番号の場合は自動で閉じる
+        if (hasNumberOnCard) {
+          console.log('DrawAnimation: Auto-closing because number is on card');
+          setTimeout(() => {
+            setAnimationState('hidden');
+            onComplete();
+          }, 100);
+        }
+      }, 2000);
       
       return () => {
         clearTimeout(revealTimer);
-        clearTimeout(completeTimer);
+        clearTimeout(clickableTimer);
       };
     } else {
       console.log('DrawAnimation: Hiding animation');
       setAnimationState('hidden');
     }
-  }, [isVisible, onComplete]);
+  }, [isVisible, onComplete, hasNumberOnCard]);
 
   if (!isVisible || drawnNumber === null) {
     console.log('DrawAnimation: Not visible or no number', { isVisible, drawnNumber });
@@ -51,10 +64,11 @@ export default function DrawAnimation({ isVisible, drawnNumber, onComplete, hasN
   return (
     <div 
       className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50 animate-fadeIn"
-      // 発表演出中は外クリックで閉じない
+      onClick={handleClose}
     >
       <div 
         className="bg-white/95 backdrop-blur-md rounded-2xl p-8 text-center card-shadow-lg animate-fadeIn max-w-sm mx-4"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="text-3xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
           けどけどん！
@@ -104,6 +118,12 @@ export default function DrawAnimation({ isVisible, drawnNumber, onComplete, hasN
                 )}
               </div>
             )}
+          </div>
+        )}
+        
+        {animationState === 'clickable' && (
+          <div className="mt-4 text-sm text-gray-500 animate-pulse">
+            クリックして閉じる
           </div>
         )}
       </div>
