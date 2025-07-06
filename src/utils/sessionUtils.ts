@@ -30,7 +30,8 @@ export function getSessionId(): string | null {
 export function saveMarkedCells(gameId: string, markedCells: boolean[][]): void {
   if (typeof window === 'undefined') return;
   
-  const key = `${MARKED_CELLS_KEY}-${gameId}`;
+  const sessionId = getOrCreateSessionId();
+  const key = `${MARKED_CELLS_KEY}-${gameId}-${sessionId}`;
   localStorage.setItem(key, JSON.stringify(markedCells));
   console.log('Saved marked cells to localStorage:', key, markedCells);
 }
@@ -38,7 +39,8 @@ export function saveMarkedCells(gameId: string, markedCells: boolean[][]): void 
 export function getMarkedCells(gameId: string): boolean[][] | null {
   if (typeof window === 'undefined') return null;
   
-  const key = `${MARKED_CELLS_KEY}-${gameId}`;
+  const sessionId = getOrCreateSessionId();
+  const key = `${MARKED_CELLS_KEY}-${gameId}-${sessionId}`;
   const saved = localStorage.getItem(key);
   if (saved) {
     try {
@@ -56,7 +58,8 @@ export function getMarkedCells(gameId: string): boolean[][] | null {
 export function clearMarkedCells(gameId: string): void {
   if (typeof window === 'undefined') return;
   
-  const key = `${MARKED_CELLS_KEY}-${gameId}`;
+  const sessionId = getOrCreateSessionId();
+  const key = `${MARKED_CELLS_KEY}-${gameId}-${sessionId}`;
   localStorage.removeItem(key);
   console.log('Cleared marked cells from localStorage:', key);
 }
